@@ -1,7 +1,8 @@
 'use server'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { resetPasswordSchema } from '@/lib/validations/auth'
+import { insertLog } from '@/lib/log'
 
 export async function portalResetPasswordAction(
   prevState: { error: string; success?: boolean } | null,
@@ -15,7 +16,18 @@ export async function portalResetPasswordAction(
 
   const supabase = await createClient()
   const { error } = await supabase.auth.updateUser({ password: parsed.data.password })
-  if (error) return { error: 'Link expirado ou inválido. Solicite uma nova redefinição.' }
+  if (error) {
+    console.error('[portalResetPassword] Supabase error:', error.status, error.message)
+    const serviceClient = await createServiceClient()
+    await insertLog(
+      serviceClient,
+      'auth',
+      'failure',
+      'Falha ao redefinir senha (portal)',
+      { supabase_error: error.message, status: error.status }
+    )
+    return { error: `Não foi possível redefinir a senha (${error.message}). Solicite uma nova redefinição.` }
+  }
 
   redirect('/portal/chamados')
 }
