@@ -14,9 +14,9 @@
 
 - [x] 3.1 Adicionar step `aquasecurity/trivy-action@master` com `scan-type: fs`, `scan-ref: .`, `severity: CRITICAL,HIGH`, `exit-code: 1` e verificar que o job roda e produz relatório no log
 - [x] 3.2 Excluir diretórios irrelevantes do scan (`node_modules`, `.next`) via `skip-dirs` e verificar que o tempo de execução do job cai e não há falso positivo vindo de dependências já instaladas localmente
-- [ ] 3.3 Verificar que o job falha propositalmente introduzindo uma dependência com CVE conhecida (teste manual único, revertido depois) e passa em estado normal do repo
+- [x] 3.3 Verificar que o job falha propositalmente introduzindo uma dependência com CVE conhecida (teste manual único, revertido depois) e passa em estado normal do repo
 
 ## 4. Validação final
 
-- [ ] 4.1 Abrir um pull request de teste e verificar que os dois checks (`test`, `trivy`) aparecem no PR e refletem o resultado real de cada job
+- [x] 4.1 Abrir um pull request de teste e verificar que os dois checks (`test`, `trivy`) aparecem no PR e refletem o resultado real de cada job
 - [x] 4.2 Confirmar com `openspec validate --change add-ci-pipeline-tests-trivy --strict` que o change está consistente antes de arquivar
