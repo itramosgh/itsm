@@ -23,17 +23,12 @@ jobs:
       - name: Instalar dependências
         run: npm ci
 
-      - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
-        with:
-          version: latest
-
       - name: Subir Supabase local
-        run: supabase start --ignore-health-check
+        run: npx supabase start --ignore-health-check
 
       - name: Expor variáveis de ambiente de teste
         run: |
-          STATUS=$(supabase status -o json)
+          STATUS=$(npx supabase status -o json)
           echo "NEXT_PUBLIC_SUPABASE_URL=$(echo "$STATUS" | jq -r '.API_URL')" >> "$GITHUB_ENV"
           echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$(echo "$STATUS" | jq -r '.ANON_KEY')" >> "$GITHUB_ENV"
           echo "SUPABASE_SERVICE_ROLE_KEY=$(echo "$STATUS" | jq -r '.SERVICE_ROLE_KEY')" >> "$GITHUB_ENV"
@@ -49,7 +44,7 @@ jobs:
 
       - name: Parar Supabase local
         if: always()
-        run: supabase stop
+        run: npx supabase stop
 
   trivy:
     name: Scan de segurança (Trivy)
