@@ -39,11 +39,11 @@ afterAll(async () => {
 })
 
 describe('resolveContactEmails', () => {
-  it('inclui contato principal + responsável + CC, exclui outros', async () => {
+  it('inclui contato principal + CC, exclui responsável sem CC e outros', async () => {
     const emails = await resolveContactEmails(supabase as any, mainContactId, companyId)
     expect(emails).toContain('principal@notif.test')
-    expect(emails).toContain('responsavel@notif.test')
     expect(emails).toContain('cc@notif.test')
+    expect(emails).not.toContain('responsavel@notif.test')
     expect(emails).not.toContain('outro@notif.test')
   })
 
