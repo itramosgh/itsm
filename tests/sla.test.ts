@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { calculateDeadline, addBusinessHours, isBusinessDay, getEffectiveSLAStart, getSLAPercentUsed } from '@/lib/sla'
+import { calculateDeadline, addBusinessHours, addBusinessDays, isBusinessDay, getEffectiveSLAStart, getSLAPercentUsed } from '@/lib/sla'
 
 // Todos os timestamps usam offset -03:00 (São Paulo) ou Z (UTC explícito) para serem
 // timezone-agnostic. Timestamps sem sufixo seriam "local time" e quebrariam em UTC.
@@ -118,6 +118,46 @@ describe('calculateDeadline — horário comercial', () => {
     })
     const expected = new Date('2026-06-01T13:00:00-03:00') // seg 13h SP
     expect(deadline.getTime()).toBe(expected.getTime())
+  })
+})
+
+describe('addBusinessDays', () => {
+  const businessDays = [1, 2, 3, 4, 5] // Seg-Sex
+
+  it('dia útil no meio da semana não é afetado — terça 10h + 24h → quarta 10h', () => {
+    const start = new Date('2026-06-02T10:00:00-03:00') // ter 10h SP
+    const result = addBusinessDays(start, 24, businessDays, [])
+    const expected = new Date('2026-06-03T10:00:00-03:00') // qua 10h SP
+    expect(result.getTime()).toBe(expected.getTime())
+  })
+
+  it('sexta 17h + 24h pula fim de semana → segunda 17h', () => {
+    const start = new Date('2026-05-29T17:00:00-03:00') // sex 17h SP
+    const result = addBusinessDays(start, 24, businessDays, [])
+    const expected = new Date('2026-06-01T17:00:00-03:00') // seg 17h SP
+    expect(result.getTime()).toBe(expected.getTime())
+  })
+
+  it('sexta 17h + 48h pula fim de semana → terça 17h', () => {
+    const start = new Date('2026-05-29T17:00:00-03:00') // sex 17h SP
+    const result = addBusinessDays(start, 48, businessDays, [])
+    const expected = new Date('2026-06-02T17:00:00-03:00') // ter 17h SP
+    expect(result.getTime()).toBe(expected.getTime())
+  })
+
+  it('feriado emendado com fim de semana também é descontado', () => {
+    // sexta 29/05 17h + 48h; segunda 01/06 é feriado → soma sexta(parcial) + terça + quarta
+    const start = new Date('2026-05-29T17:00:00-03:00') // sex 17h SP
+    const result = addBusinessDays(start, 48, businessDays, ['2026-06-01'])
+    const expected = new Date('2026-06-03T17:00:00-03:00') // qua 17h SP
+    expect(result.getTime()).toBe(expected.getTime())
+  })
+
+  it('início em dia não-útil (sábado) — tempo de espera não contado no fim de semana conta a partir da meia-noite do próximo dia útil', () => {
+    const start = new Date('2026-05-30T10:00:00-03:00') // sáb 10h SP
+    const result = addBusinessDays(start, 24, businessDays, [])
+    const expected = new Date('2026-06-02T00:00:00-03:00') // ter 00h SP (24h corridas a partir de segunda 00h)
+    expect(result.getTime()).toBe(expected.getTime())
   })
 })
 

@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { sendEmail, awaitingClientReminderHtml, buildFromAddress } from '@/lib/email'
 import { resolveContactEmails } from '@/lib/email-notifications'
 import { insertLog } from '@/lib/log'
+import { addBusinessDays } from '@/lib/sla'
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization')
@@ -16,22 +17,38 @@ export async function GET(request: Request) {
 
   const { data: settings } = await supabase
     .from('platform_settings')
-    .select('email_from_address, email_from_name, company_whatsapp')
+    .select('email_from_address, email_from_name, company_whatsapp, business_hours_days')
     .single()
   const from = buildFromAddress((settings as any)?.email_from_name ?? null, (settings as any)?.email_from_address ?? null)
+  const businessDays: number[] = (settings as any)?.business_hours_days ?? [1, 2, 3, 4, 5]
+
+  // Tabela de feriados é pequena (importação anual) — buscar tudo é mais simples
+  // e mais seguro do que estimar uma janela de datas que cubra qualquer chamado parado.
+  const { data: holidayRows } = await supabase.from('holidays').select('date')
+  const holidays = (holidayRows ?? []).map((h: any) => h.date)
+
+  // Prazo de espera para lembrete (24h) e fechamento (48h). Contratos 24x7 contam
+  // horas corridas; os demais pulam fim de semana e feriado (addBusinessDays).
+  function waitingDeadline(lastUpdate: Date, hours: number, is24x7: boolean): Date {
+    if (is24x7) return new Date(lastUpdate.getTime() + hours * 3_600_000)
+    return addBusinessDays(lastUpdate, hours, businessDays, holidays)
+  }
 
   let actions = 0
 
   // ── AGUARDANDO CLIENTE ──────────────────────────────────────────────
   const { data: awaitingClientTickets } = await supabase
     .from('tickets')
-    .select('id, number, title, updated_at, contact_id, company_id, contacts(email, full_name), assigned_to')
+    .select('id, number, title, updated_at, contact_id, company_id, contacts(email, full_name), assigned_to, contracts(is_24x7)')
     .eq('status', 'aguardando_cliente')
 
   for (const ticket of (awaitingClientTickets ?? []) as any[]) {
     const lastUpdate = new Date(ticket.updated_at)
-    const hoursSinceUpdate = (now.getTime() - lastUpdate.getTime()) / 3_600_000
-    if (hoursSinceUpdate >= 48) {
+    const is24x7 = ticket.contracts?.is_24x7 === true
+    const closeDeadline = waitingDeadline(lastUpdate, 48, is24x7)
+    const reminderDeadline = waitingDeadline(lastUpdate, 24, is24x7)
+
+    if (now >= closeDeadline) {
       // Auto-fechar após 2 dias sem resposta
       await supabase.from('tickets').update({
         status: 'fechado',
@@ -66,7 +83,7 @@ export async function GET(request: Request) {
       continue
     }
 
-    if (hoursSinceUpdate >= 24) {
+    if (now >= reminderDeadline) {
       // Verificar se já foi enviado lembrete nas últimas 24h para não repetir por execução do cron
       const since24h = new Date(now.getTime() - 24 * 3_600_000).toISOString()
       const { data: recentReminder } = await supabase
@@ -112,16 +129,18 @@ export async function GET(request: Request) {
   }
 
   // ── AGUARDANDO APROVAÇÃO ────────────────────────────────────────────
-  const twoDaysAgo = new Date(now.getTime() - 48 * 3_600_000)
-
+  // Deadline varia por contrato/feriado, não dá pra filtrar por data direto no SQL —
+  // volume de aprovações pendentes é baixo, filtra em JS após buscar todas.
   const { data: pendingApprovals } = await supabase
     .from('ticket_approvals')
-    .select('id, ticket_id, tickets(number, title, assigned_to, contact_id, contacts(email))')
+    .select('id, ticket_id, created_at, tickets(number, title, assigned_to, contact_id, contacts(email), contracts(is_24x7))')
     .eq('status', 'pendente')
-    .lt('created_at', twoDaysAgo.toISOString())
 
   for (const approval of (pendingApprovals ?? []) as any[]) {
     const ticket = approval.tickets as any
+    const is24x7 = ticket?.contracts?.is_24x7 === true
+    const closeDeadline = waitingDeadline(new Date(approval.created_at), 48, is24x7)
+    if (now < closeDeadline) continue
 
     await supabase.from('ticket_approvals').update({ status: 'expirado' } as never).eq('id', approval.id)
     await supabase.from('tickets').update({

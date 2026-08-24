@@ -49,14 +49,18 @@ function saoPauloDateAtTime(date: Date, hours: number, minutes: number): Date {
   return new Date(`${dateStr}T${hh}:${mm}:00-03:00`)
 }
 
+function isDayInBusinessDays(date: Date, businessDays: number[], holidays: string[]): boolean {
+  const { isoDay, dateStr } = getSaoPauloDateParts(date)
+  if (!businessDays.includes(isoDay)) return false
+  return !holidays.includes(dateStr)
+}
+
 export function isBusinessDay(
   date: Date,
   settings: BusinessHoursSettings,
   holidays: string[]
 ): boolean {
-  const { isoDay, dateStr } = getSaoPauloDateParts(date)
-  if (!settings.days.includes(isoDay)) return false
-  return !holidays.includes(dateStr)
+  return isDayInBusinessDays(date, settings.days, holidays)
 }
 
 function nextBusinessDayStart(
@@ -149,6 +153,39 @@ export function addBusinessHours(
 
     remainingMinutes -= minutesAvailable
     current = nextBusinessDayStart(current, settings, holidays)
+  }
+
+  return current
+}
+
+/**
+ * Adds `hours` to `start`, skipping non-business days entirely (weekend and
+ * holiday), counting 24h straight through on business days — unlike
+ * addBusinessHours, this does not restrict to the office-hours window.
+ */
+export function addBusinessDays(
+  start: Date,
+  hours: number,
+  businessDays: number[],
+  holidays: string[]
+): Date {
+  let remainingMs = hours * 3_600_000
+  let current = new Date(start)
+
+  while (remainingMs > 0) {
+    const { dateStr } = getSaoPauloDateParts(current)
+    const midnightSP = new Date(`${dateStr}T00:00:00-03:00`)
+    const nextMidnightSP = new Date(midnightSP.getTime() + 24 * 60 * 60_000)
+    const msToDayEnd = nextMidnightSP.getTime() - current.getTime()
+
+    if (isDayInBusinessDays(current, businessDays, holidays)) {
+      if (remainingMs <= msToDayEnd) {
+        return new Date(current.getTime() + remainingMs)
+      }
+      remainingMs -= msToDayEnd
+    }
+
+    current = nextMidnightSP
   }
 
   return current
