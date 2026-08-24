@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { fmtDate } from '@/lib/format-date'
+import { offsetDateOnly } from '@/lib/date-math'
 
 const PAGE_SIZE = 50
 
@@ -35,7 +36,7 @@ export default async function RelatorioPersonalizadoPage({
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single() as { data: any }
   if (!['admin', 'gestor'].includes(profile?.role)) redirect('/dashboard')
 
-  const fromDate = params.from ?? new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10)
+  const fromDate = params.from ?? offsetDateOnly(-30 * 86_400_000)
   const toDate = params.to ?? new Date().toISOString().slice(0, 10)
   const page = Math.max(1, parseInt(params.page ?? '1', 10))
   const rangeFrom = (page - 1) * PAGE_SIZE

@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import { offsetIso, offsetDateOnly } from '@/lib/date-math'
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr)
@@ -33,12 +34,12 @@ export default async function DashboardPage() {
   const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
   const todayStartISO = todayStart.toISOString()
   const todayDate = new Date().toISOString().slice(0, 10)
-  const next7DaysDate = new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString().slice(0, 10)
-  const next2Hours = new Date(Date.now() + 2 * 3600 * 1000).toISOString()
-  const nextWeek = new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString()
-  const next14Days = new Date(Date.now() + 14 * 24 * 3600 * 1000).toISOString()
-  const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString()
-  const last7Days = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString()
+  const next7DaysDate = offsetDateOnly(7 * 24 * 3600 * 1000)
+  const next2Hours = offsetIso(2 * 3600 * 1000)
+  const nextWeek = offsetIso(7 * 24 * 3600 * 1000)
+  const next14Days = offsetIso(14 * 24 * 3600 * 1000)
+  const twoWeeksAgo = offsetIso(-14 * 24 * 3600 * 1000)
+  const last7Days = offsetIso(-7 * 24 * 3600 * 1000)
 
   const role = profile?.role
   const isAnalista = role === 'analista'

@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 import { AutoRefresh } from '@/components/ui/AutoRefresh'
+import { offsetIso, offsetDateOnly } from '@/lib/date-math'
 
 export default async function DashboardOperacionalPage({
   searchParams,
@@ -19,15 +20,15 @@ export default async function DashboardOperacionalPage({
     .from('profiles').select('role').eq('id', user.id).single() as { data: any }
   if (!['admin', 'gestor'].includes(profile?.role)) redirect('/dashboard')
 
-  const fromDate = from ?? new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10)
+  const fromDate = from ?? offsetDateOnly(-30 * 86_400_000)
   const toDate = to ?? new Date().toISOString().slice(0, 10)
   const staleDays = parseInt(stale ?? '5', 10)
 
-  const staleThreshold = new Date(Date.now() - staleDays * 86_400_000).toISOString()
+  const staleThreshold = offsetIso(-staleDays * 86_400_000)
   const today = new Date().toISOString().slice(0, 10)
-  const in30 = new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10)
-  const in60 = new Date(Date.now() + 60 * 86_400_000).toISOString().slice(0, 10)
-  const in90 = new Date(Date.now() + 90 * 86_400_000).toISOString().slice(0, 10)
+  const in30 = offsetDateOnly(30 * 86_400_000)
+  const in60 = offsetDateOnly(60 * 86_400_000)
+  const in90 = offsetDateOnly(90 * 86_400_000)
 
   const [
     { data: ticketsRaw },

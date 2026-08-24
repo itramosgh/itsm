@@ -26,16 +26,24 @@ interface Props {
 
 export function HolidayNoticeSheet({ open, onOpenChange, holidayId, holidayName, holidayDate }: Props) {
   const [details, setDetails] = React.useState<Detail[] | null>(null)
-  const [loading, setLoading] = React.useState(false)
+  const [loadedFor, setLoadedFor] = React.useState<string | null>(null)
+
+  const fetchKey = open ? holidayId : null
+  if (fetchKey !== loadedFor) {
+    setLoadedFor(fetchKey)
+    setDetails(null)
+  }
 
   React.useEffect(() => {
     if (!open) return
-    setLoading(true)
+    let cancelled = false
     getHolidayNoticeDetailsAction(holidayId).then(data => {
-      setDetails(data)
-      setLoading(false)
+      if (!cancelled) setDetails(data)
     })
+    return () => { cancelled = true }
   }, [open, holidayId])
+
+  const loading = open && details === null
 
   const formattedDate = new Date(holidayDate + 'T12:00:00').toLocaleDateString('pt-BR')
 

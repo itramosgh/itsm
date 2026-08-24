@@ -84,8 +84,10 @@ export function Sidebar({ appName, logoUrl, isOpen = false, onClose }: SidebarPr
   const [open, setOpen] = useState<Record<string, boolean>>(
     () => getInitialOpenGroups(pathname)
   )
+  const [syncedPathname, setSyncedPathname] = useState(pathname)
 
-  useEffect(() => {
+  if (pathname !== syncedPathname) {
+    setSyncedPathname(pathname)
     setOpen(prev => {
       const updates: Record<string, boolean> = {}
       for (const entry of navigation) {
@@ -95,7 +97,7 @@ export function Sidebar({ appName, logoUrl, isOpen = false, onClose }: SidebarPr
       }
       return { ...prev, ...updates }
     })
-  }, [pathname])
+  }
 
   useEffect(() => {
     onClose?.()

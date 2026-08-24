@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
+import { offsetDateOnly } from '@/lib/date-math'
 
 const CHANNEL_LABELS: Record<string, string> = {
   zabbix: 'Zabbix',
@@ -28,7 +29,7 @@ export default async function DashboardMonitoramentoPage({
     .from('profiles').select('role').eq('id', user.id).single() as { data: any }
   if (!['admin', 'gestor'].includes(profile?.role)) redirect('/dashboard')
 
-  const fromDate = from ?? new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10)
+  const fromDate = from ?? offsetDateOnly(-30 * 86_400_000)
   const toDate = to ?? new Date().toISOString().slice(0, 10)
 
   const [{ data: integrations }, { data: urls }] = await Promise.all([

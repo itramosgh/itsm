@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { fmtDate } from '@/lib/format-date'
+import { offsetDateOnly } from '@/lib/date-math'
 
 const PRIORITY_LABELS: Record<string, string> = {
   critica: 'Crítica', alta: 'Alta', media: 'Média', baixa: 'Baixa',
@@ -36,7 +37,7 @@ export default async function PortalRelatorioPersonalizadoPage({
   if (!contact.is_contract_responsible) notFound()
 
   const companyId = contact.company_id
-  const fromDate = params.from ?? new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10)
+  const fromDate = params.from ?? offsetDateOnly(-30 * 86_400_000)
   const toDate = params.to ?? new Date().toISOString().slice(0, 10)
 
   const [{ data: categories }, { data: contacts }, ticketsResult] = await Promise.all([

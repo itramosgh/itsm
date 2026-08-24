@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
+import { offsetIso, offsetDateOnly } from '@/lib/date-math'
 
 const STATUS_LABELS: Record<string, string> = {
   rascunho: 'Rascunho',
@@ -38,10 +39,10 @@ export default async function DashboardMudancasPage({
     .from('profiles').select('role').eq('id', user.id).single() as { data: any }
   if (!['admin', 'gestor'].includes(profile?.role)) redirect('/dashboard')
 
-  const fromDate = from ?? new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10)
+  const fromDate = from ?? offsetDateOnly(-30 * 86_400_000)
   const toDate = to ?? new Date().toISOString().slice(0, 10)
   const now = new Date().toISOString()
-  const in60Days = new Date(Date.now() + 60 * 86_400_000).toISOString()
+  const in60Days = offsetIso(60 * 86_400_000)
 
   const [{ data: gmudsRaw }, { data: upcomingRaw }] = await Promise.all([
     supabase
