@@ -27,25 +27,25 @@ const baseIntegration: MonitoringIntegration = {
 describe('isWithinMonitoringWindow', () => {
   it('24x7 sempre retorna true', () => {
     const integration = { ...baseIntegration, window_type: '24x7' as const }
-    const now = new Date('2026-01-15T03:00:00')
+    const now = new Date('2026-01-15T03:00:00-03:00')
     expect(isWithinMonitoringWindow(integration, now, [], { start: '09:00', end: '18:00', days: [1,2,3,4,5] })).toBe(true)
   })
 
   it('horario_comercial retorna false fora do horário', () => {
     const integration = { ...baseIntegration, window_type: 'horario_comercial' as const }
-    const saturday = new Date('2026-01-17T10:00:00')
+    const saturday = new Date('2026-01-17T10:00:00-03:00')
     expect(isWithinMonitoringWindow(integration, saturday, [], { start: '09:00', end: '18:00', days: [1,2,3,4,5] })).toBe(false)
   })
 
   it('horario_comercial retorna true dentro do horário comercial', () => {
     const integration = { ...baseIntegration, window_type: 'horario_comercial' as const }
-    const weekday = new Date('2026-01-15T10:30:00')
+    const weekday = new Date('2026-01-15T10:30:00-03:00')
     expect(isWithinMonitoringWindow(integration, weekday, [], { start: '09:00', end: '18:00', days: [1,2,3,4,5] })).toBe(true)
   })
 
   it('horario_comercial retorna false em feriado', () => {
     const integration = { ...baseIntegration, window_type: 'horario_comercial' as const }
-    const holiday = new Date('2026-01-15T10:00:00')
+    const holiday = new Date('2026-01-15T10:00:00-03:00')
     expect(isWithinMonitoringWindow(integration, holiday, ['2026-01-15'], { start: '09:00', end: '18:00', days: [1,2,3,4,5] })).toBe(false)
   })
 
@@ -57,7 +57,7 @@ describe('isWithinMonitoringWindow', () => {
       window_custom_start: '08:00',
       window_custom_end: '20:00',
     }
-    const weekday = new Date('2026-01-15T09:00:00')
+    const weekday = new Date('2026-01-15T09:00:00-03:00')
     expect(isWithinMonitoringWindow(integration, weekday, [], { start: '09:00', end: '18:00', days: [1,2,3,4,5] })).toBe(true)
   })
 
@@ -69,7 +69,7 @@ describe('isWithinMonitoringWindow', () => {
       window_custom_start: '08:00',
       window_custom_end: '20:00',
     }
-    const saturday = new Date('2026-01-17T10:00:00')
+    const saturday = new Date('2026-01-17T10:00:00-03:00')
     expect(isWithinMonitoringWindow(integration, saturday, [], { start: '09:00', end: '18:00', days: [1,2,3,4,5] })).toBe(false)
   })
 })

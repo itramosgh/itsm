@@ -16,7 +16,7 @@ Repo Next.js sem CI hoje. Testes (Vitest, `tests/`) usam `.env.test.local` via d
 
 ## Decisions
 
-**Node version:** fixar `node-version: 20` no `actions/setup-node`, com `cache: npm`. Repo não pinos versão; 20 é LTS ativa compatível com Next 16/React 19.
+**Node version:** fixar `node-version: 22` no `actions/setup-node`, com `cache: npm`. Repo não pinava versão; testado com 20 primeiro, mas `@supabase/realtime-js` (via `@supabase/supabase-js`) exige WebSocket nativo — ausente no Node 20, presente a partir do Node 22. 22 também é a LTS mais próxima do Node 24 usado em dev local.
 Alternativa considerada: usar `.nvmrc` — descartada porque não existe hoje e criar um está fora do escopo pedido (só pipeline).
 
 **Subir Supabase no CI:** usar `supabase/setup-cli@v1` action + `supabase start`. As chaves anon/service role locais do Supabase CLI são valores fixos e públicos (mesmos em qualquer máquina), documentados no `.env.test.local` — não são segredo real, então podem ser hardcoded no workflow como env do job de teste em vez de exigir GitHub Secret.
