@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { CheckCircle2, XCircle, Minus } from 'lucide-react'
+import { nowMs, offsetIso } from '@/lib/date-math'
 
 interface CronDef {
   key: string
@@ -50,7 +51,7 @@ function formatDate(dateStr: string): string {
 export default async function CronsPage() {
   const supabase = await createClient()
 
-  const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+  const cutoff = offsetIso(-7 * 24 * 60 * 60 * 1000)
   const { data: logs } = await supabase
     .from('system_logs')
     .select('id, category, status, description, details, created_at')
@@ -61,7 +62,7 @@ export default async function CronsPage() {
 
   const allLogs = (logs ?? []) as any[]
   const todayStr = new Date().toDateString()
-  const yesterday = Date.now() - 24 * 60 * 60 * 1000
+  const yesterday = nowMs() - 24 * 60 * 60 * 1000
 
   const cronStatus = CRON_REGISTRY.map(cron => {
     const matching = allLogs.filter(

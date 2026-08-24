@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { logoutAction } from '@/app/(auth)/login/actions'
@@ -29,10 +29,12 @@ export function PortalNav({
 }: PortalNavProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const pathname = usePathname()
+  const [syncedPathname, setSyncedPathname] = useState(pathname)
 
-  useEffect(() => {
+  if (pathname !== syncedPathname) {
+    setSyncedPathname(pathname)
     setMobileMenuOpen(false)
-  }, [pathname])
+  }
 
   return (
     <>

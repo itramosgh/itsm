@@ -22,7 +22,7 @@ export function KbSearchSuggestions({ query, onResolved }: KbSearchSuggestionsPr
 
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current)
-    if (query.length < 3) { setArticles([]); return }
+    if (query.length < 3) return
 
     timerRef.current = setTimeout(async () => {
       const res = await fetch(`/api/kb/search?q=${encodeURIComponent(query)}`)
@@ -41,7 +41,7 @@ export function KbSearchSuggestions({ query, onResolved }: KbSearchSuggestionsPr
     )
   }
 
-  if (articles.length === 0) return null
+  if (query.length < 3 || articles.length === 0) return null
 
   return (
     <div className="rounded-md border p-4 space-y-3">

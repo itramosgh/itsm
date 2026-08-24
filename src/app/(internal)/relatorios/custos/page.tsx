@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
+import { offsetDateOnly } from '@/lib/date-math'
 
 function fmtBrl(value: number | null): string {
   if (value === null || value === 0) return '—'
@@ -26,7 +27,7 @@ export default async function CostReportPage({
 
   if (!['admin', 'gestor'].includes(profile?.role)) redirect('/dashboard')
 
-  const fromDate = from ?? new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString().slice(0, 10)
+  const fromDate = from ?? offsetDateOnly(-30 * 24 * 3600 * 1000)
   const toDate = to ?? new Date().toISOString().slice(0, 10)
 
   let query = supabase

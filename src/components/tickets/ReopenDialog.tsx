@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog'
+import { offsetDate } from '@/lib/date-math'
 
 interface Props {
   ticketId: string
@@ -19,7 +20,7 @@ export function ReopenDialog({ ticketId, closedAt }: Props) {
   const [error, setError] = useState('')
   const [isPending, startTransition] = useTransition()
 
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 3_600_000)
+  const sevenDaysAgo = offsetDate(-7 * 24 * 3_600_000)
   const isExpired = new Date(closedAt) < sevenDaysAgo
 
   if (isExpired) return null
